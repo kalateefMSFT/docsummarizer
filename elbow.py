@@ -16,7 +16,7 @@ def calculate_inertia(vectors, max_clusters=12):
     """
     inertia_values = []
     for num_clusters in range(1, max_clusters + 1):
-        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init='auto').fit(vectors)
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10).fit(vectors)
         inertia_values.append(kmeans.inertia_)
     return inertia_values
 
