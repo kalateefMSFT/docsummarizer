@@ -13,16 +13,16 @@ small sections that contain the majority of the meaning of the document.
 
 ## Usage
 
-1. Launch the Streamlit app by running `streamlit run main.py`
-2. Upload a document (TXT or PDF) to summarize.
-3. Create a `.env` file and entr the following variables
+1.Create a `.env` file and entr the following variables
    
     OPENAI_API_KEY="<Azure Openai API Key>"
     OPENAI_API_BASE="https://<Azure OpenAI Resource>.openai.azure.com/"
     OPENAI_API_VERSION="2023-05-15"
    
-6. Choose whether or not to try to find optimal clusters (which could save on token usage).
-7. Click the "Summarize" button and wait for the result.
+2. Launch the Streamlit app by running `streamlit run main.py`
+3. Upload a document (TXT or PDF) to summarize.
+4. Choose whether or not to try to find optimal clusters (which could save on token usage).
+5. Click the "Summarize" button and wait for the result.
 
 ## Modules
 
