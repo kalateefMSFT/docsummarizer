@@ -1,15 +1,24 @@
 import os
 import streamlit as st
+import openai
+from dotenv import load_dotenv
 
 from utils import (
     doc_loader, summary_prompt_creator, doc_to_final_summary,
 )
 from my_prompts import file_map, file_combine, youtube_map, youtube_combine
-from streamlit_app_utils import check_gpt_4, check_key_validity, create_temp_file, create_chat_model, \
-    token_limit, token_minimum
+from streamlit_app_utils import create_temp_file, create_chat_model, token_limit, token_minimum
 
 from utils import transcript_loader
 
+# Load environment variables (set OPENAI_API_KEY and OPENAI_API_BASE in .env)
+load_dotenv()
+
+# Configure Azure OpenAI Service API
+openai.api_type = "azure"
+openai.api_version = os.getenv('OPENAI_API_VERSION')
+openai.api_base = os.getenv('OPENAI_API_BASE')
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def main():
     """
@@ -27,7 +36,8 @@ def main():
     if input_method == 'Enter a YouTube URL':
         youtube_url = st.text_input("Enter a YouTube URL to summarize")
 
-    st.sidebar.markdown('# Forked from: [Ethan](https://github.com/e-johnstonn)')
+    find_clusters = st.checkbox('Find optimal clusters (experimental, could save on token usage)', value=False)
+    st.sidebar.markdown('# Forked from code developed by [Ethan](https://github.com/e-johnstonn)')
     st.sidebar.markdown('# Git link: [Docsummarizer](https://github.com/kalateefMSFT/docsummarizer)')
 
     if st.button('Summarize (click once and wait)'):
@@ -44,10 +54,6 @@ def process_summarize_button(file_or_transcript, find_clusters, file=True):
     Processes the summarize button, and displays the summary if input and doc size are valid
 
     :param file_or_transcript: The file uploaded by the user or the transcript from the YouTube URL
-
-    :param api_key: The API key entered by the user
-
-    :param use_gpt_4: Whether to use GPT-4 or not
 
     :param find_clusters: Whether to find optimal clusters or not, experimental
 
@@ -115,6 +121,7 @@ def validate_input(file_or_transcript):
     if file_or_transcript == None:
         st.warning("Please upload a file or enter a YouTube URL.")
         return False
+
     return True
 
 
