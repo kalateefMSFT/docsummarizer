@@ -6,6 +6,10 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
 
+import os
+import openai
+from dotenv import load_dotenv
+
 import streamlit as st
 
 from sklearn.cluster import KMeans
@@ -22,19 +26,14 @@ import urllib.parse
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import os
-import openai
-from dotenv import load_dotenv
-
-# Load environment variables (set OPENAI_API_KEY and OPENAI_API_BASE in .env)
+# Load environment variables
 load_dotenv()
 
 # Configure OpenAI API
 openai.api_type = "azure"
-openai.api_version = "2023-05-15"
+openai.api_version = os.getenv('OPENAI_API_VERSION')
 openai.api_base = os.getenv('OPENAI_API_BASE')
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def doc_loader(file_path: str):
     """
@@ -90,13 +89,11 @@ def remove_special_tokens(docs):
 
 
 
-def embed_docs_openai(docs, api_key):
+def embed_docs_openai(docs):
     """
     Embed a list of loaded langchain Document objects into a list of vectors.
 
     :param docs: A list of loaded langchain Document objects to embed.
-
-    :param api_key: The OpenAI API key to use for embedding.
 
     :return: A list of vectors.
     """
@@ -121,7 +118,7 @@ def kmeans_clustering(vectors, num_clusters=None):
         num_clusters = determine_optimal_clusters(inertia_values)
         print(f'Optimal number of clusters: {num_clusters}')
 
-    kmeans = KMeans(n_clusters=num_clusters, random_state=42).fit(vectors)
+    kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10).fit(vectors)
     return kmeans
 
 
@@ -231,9 +228,9 @@ def create_summary_from_docs(summary_docs, initial_chain, final_sum_list):
     count = token_counter(summaries)
 
     max_tokens = 3800 - int(count)
-    model = 'gpt-3.5-turbo'
+    model = 'gpt-35-turbo'
 
-    final_sum_list[2] = AzureChatOpenAI(temperature=0, max_tokens=max_tokens, model_name=model)
+    final_sum_list[2] = AzureChatOpenAI(temperature=0, max_tokens=max_tokens, deployment_name=model)
     final_sum_chain = create_summarize_chain(final_sum_list)
     summaries = Document(page_content=summaries)
     final_summary = final_sum_chain.run([summaries])
@@ -273,7 +270,7 @@ def split_by_tokens(doc, num_clusters, ratio=5, minimum_tokens=200, maximum_toke
     return split_doc
 
 
-def extract_summary_docs(langchain_document, num_clusters, api_key, find_clusters):
+def extract_summary_docs(langchain_document, num_clusters, find_clusters):
     """
     Automatically convert a single langchain Document object into a list of smaller langchain Document objects that represent each cluster.
 
@@ -281,14 +278,12 @@ def extract_summary_docs(langchain_document, num_clusters, api_key, find_cluster
 
     :param num_clusters: The number of clusters to use.
 
-    :param api_key: The OpenAI API key to use for summarization.
-
     :param find_clusters: Whether to find the optimal number of clusters to use.
 
     :return: A list of langchain Document objects.
     """
     split_document = split_by_tokens(langchain_document, num_clusters)
-    vectors = embed_docs_openai(split_document, api_key)
+    vectors = embed_docs_openai(split_document)
 
     if find_clusters:
         kmeans = kmeans_clustering(vectors, None)
@@ -318,7 +313,7 @@ def doc_to_final_summary(langchain_document, num_clusters, initial_prompt_list, 
     :return: A string containing the summary.
     """
     initial_prompt_list = create_summarize_chain(initial_prompt_list)
-    summary_docs = extract_summary_docs(langchain_document, num_clusters, api_key, find_clusters)
+    summary_docs = extract_summary_docs(langchain_document, num_clusters, find_clusters)
     output = create_summary_from_docs(summary_docs, initial_prompt_list, final_prompt_list)
     return output
 
@@ -377,8 +372,3 @@ def transcript_loader(video_url):
     transcript = YoutubeLoader(video_id=extract_video_id(video_url))
     loaded = transcript.load()
     return loaded
-
-
-
-
-
