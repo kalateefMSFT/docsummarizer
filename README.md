@@ -13,7 +13,7 @@ small sections that contain the majority of the meaning of the document.
 
 ## Usage
 
-1.Create a `.env` file and entr the following variables
+1.Create a `.env` file and enter the following variables
    
     OPENAI_API_KEY="<Azure Openai API Key>"
     OPENAI_API_BASE="https://<Azure OpenAI Resource>.openai.azure.com/"
