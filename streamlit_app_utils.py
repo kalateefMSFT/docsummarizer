@@ -1,26 +1,22 @@
 import tempfile
+import PyPDF2
+from io import StringIO
 import os
 import openai
-import PyPDF2
-
-from io import StringIO
+from dotenv import load_dotenv
 
 from langchain.chat_models import AzureChatOpenAI
 
 from utils import doc_to_text, token_counter
-
-from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Configure OpenAI API
 openai.api_type = "azure"
-openai.api_version = "2023-05-15" # os.getenv('OPENAI_API_VERSION')
+openai.api_version = os.getenv('OPENAI_API_VERSION')
 openai.api_base = os.getenv('OPENAI_API_BASE')
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-os.environ["LANGCHAIN_HANDLER"] = "langchain"
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def pdf_to_text(pdf_file):
     """
@@ -93,12 +89,6 @@ def create_chat_model():
     """
     Create a chat model ensuring that the token limit of the overall summary is not exceeded - GPT-4 has a higher token limit.
 
-    :param api_key: The OpenAI API key to use for the chat model.
-
-    :param use_gpt_4: Whether to use GPT-4 or not.
-
     :return: A chat model.
     """
-    return AzureChatOpenAI(temperature=0, max_tokens=2000, deployment_name='gpt-3.5-turbo')
-
-
+    return AzureChatOpenAI(temperature=0, max_tokens=1000, deployment_name='gpt-35-turbo')
