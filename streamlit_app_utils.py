@@ -9,6 +9,8 @@ from langchain.chat_models import AzureChatOpenAI
 
 from utils import doc_to_text, token_counter
 
+from dotenv import load_dotenv
+
 # Load environment variables
 load_dotenv()
 
