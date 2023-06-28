@@ -1,13 +1,24 @@
 import tempfile
-
+import os
+import openai
 import PyPDF2
 
 from io import StringIO
 
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI
 
 from utils import doc_to_text, token_counter
 
+# Load environment variables
+load_dotenv()
+
+# Configure OpenAI API
+openai.api_type = "azure"
+openai.api_version = "2023-05-15" # os.getenv('OPENAI_API_VERSION')
+openai.api_base = os.getenv('OPENAI_API_BASE')
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+os.environ["LANGCHAIN_HANDLER"] = "langchain"
 
 def pdf_to_text(pdf_file):
     """
@@ -23,21 +34,6 @@ def pdf_to_text(pdf_file):
         p = pdf_reader.pages[i]
         text.write(p.extract_text())
     return text.getvalue().encode('utf-8')
-
-
-def check_gpt_4(api_key):
-    """
-    Check if the user has access to GPT-4.
-
-    :param api_key: The user's OpenAI API key.
-
-    :return: True if the user has access to GPT-4, False otherwise.
-    """
-    try:
-        ChatOpenAI(openai_api_key=api_key, model_name='gpt-4').call_as_llm('Hi')
-        return True
-    except Exception as e:
-        return False
 
 
 def token_limit(doc, maximum=200000):
@@ -75,24 +71,6 @@ def token_minimum(doc, minimum=2000):
     return True
 
 
-def check_key_validity(api_key):
-    """
-    Check if an OpenAI API key is valid.
-
-    :param api_key: The OpenAI API key to check.
-
-    :return: True if the API key is valid, False otherwise.
-    """
-    try:
-        ChatOpenAI(openai_api_key=api_key).call_as_llm('Hi')
-        print('API Key is valid')
-        return True
-    except Exception as e:
-        print('API key is invalid or OpenAI is having issues.')
-        print(e)
-        return False
-
-
 def create_temp_file(uploaded_file):
     """
     Create a temporary file from an uploaded file.
@@ -109,7 +87,7 @@ def create_temp_file(uploaded_file):
     return temp_file.name
 
 
-def create_chat_model(api_key, use_gpt_4):
+def create_chat_model():
     """
     Create a chat model ensuring that the token limit of the overall summary is not exceeded - GPT-4 has a higher token limit.
 
@@ -119,10 +97,6 @@ def create_chat_model(api_key, use_gpt_4):
 
     :return: A chat model.
     """
-    if use_gpt_4:
-        return ChatOpenAI(openai_api_key=api_key, temperature=0, max_tokens=500, model_name='gpt-3.5-turbo')
-    else:
-        return ChatOpenAI(openai_api_key=api_key, temperature=0, max_tokens=250, model_name='gpt-3.5-turbo')
-
+    return AzureChatOpenAI(temperature=0, max_tokens=2000, deployment_name='gpt-3.5-turbo')
 
 
