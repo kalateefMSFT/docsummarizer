@@ -1,7 +1,7 @@
 from langchain.document_loaders import TextLoader, YoutubeLoader
 from langchain.text_splitter import TokenTextSplitter
 from langchain.schema import Document
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.prompts import PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
@@ -21,6 +21,19 @@ import time
 import urllib.parse
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import os
+import openai
+from dotenv import load_dotenv
+
+# Load environment variables (set OPENAI_API_KEY and OPENAI_API_BASE in .env)
+load_dotenv()
+
+# Configure OpenAI API
+openai.api_type = "azure"
+openai.api_version = "2023-05-15"
+openai.api_base = os.getenv('OPENAI_API_BASE')
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def doc_loader(file_path: str):
@@ -88,7 +101,7 @@ def embed_docs_openai(docs, api_key):
     :return: A list of vectors.
     """
     docs = remove_special_tokens(docs)
-    embeddings = OpenAIEmbeddings(openai_api_key=api_key)
+    embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", chunk_size=1)
     vectors = embeddings.embed_documents([x.page_content for x in docs])
     return vectors
 
@@ -196,7 +209,7 @@ def parallelize_summaries(summary_docs, initial_chain, progress_bar, max_workers
 
 
 
-def create_summary_from_docs(summary_docs, initial_chain, final_sum_list, api_key, use_gpt_4):
+def create_summary_from_docs(summary_docs, initial_chain, final_sum_list):
     """
     Summarize a list of loaded langchain Document objects using multiple langchain summarize chains.
 
@@ -205,10 +218,6 @@ def create_summary_from_docs(summary_docs, initial_chain, final_sum_list, api_ke
     :param initial_chain: The initial langchain summarize chain to use.
 
     :param final_sum_list: A list containing the template, input variables, and llm to use for the final chain.
-
-    :param api_key: The OpenAI API key to use for summarization.
-
-    :param use_gpt_4: Whether to use GPT-4 or GPT-3.5-turbo for summarization.
 
     :return: A string containing the summary.
     """
@@ -221,15 +230,10 @@ def create_summary_from_docs(summary_docs, initial_chain, final_sum_list, api_ke
     summaries = '\n'.join(doc_summaries)
     count = token_counter(summaries)
 
-    if use_gpt_4:
-        max_tokens = 7500 - int(count)
-        model = 'gpt-4'
+    max_tokens = 3800 - int(count)
+    model = 'gpt-3.5-turbo'
 
-    else:
-        max_tokens = 3800 - int(count)
-        model = 'gpt-3.5-turbo'
-
-    final_sum_list[2] = ChatOpenAI(openai_api_key=api_key, temperature=0, max_tokens=max_tokens, model_name=model)
+    final_sum_list[2] = AzureChatOpenAI(temperature=0, max_tokens=max_tokens, model_name=model)
     final_sum_chain = create_summarize_chain(final_sum_list)
     summaries = Document(page_content=summaries)
     final_summary = final_sum_chain.run([summaries])
@@ -297,7 +301,7 @@ def extract_summary_docs(langchain_document, num_clusters, api_key, find_cluster
     return summary_docs
 
 
-def doc_to_final_summary(langchain_document, num_clusters, initial_prompt_list, final_prompt_list, api_key, use_gpt_4, find_clusters=False):
+def doc_to_final_summary(langchain_document, num_clusters, initial_prompt_list, final_prompt_list, find_clusters=False):
     """
     Automatically summarize a single langchain Document object using multiple langchain summarize chains.
 
@@ -309,17 +313,13 @@ def doc_to_final_summary(langchain_document, num_clusters, initial_prompt_list, 
 
     :param final_prompt_list: A list containing the template, input variables, and llm to use for the final chain.
 
-    :param api_key: The OpenAI API key to use for summarization.
-
-    :param use_gpt_4: Whether to use GPT-4 or GPT-3.5-turbo for summarization.
-
     :param find_clusters: Whether to automatically find the optimal number of clusters to use.
 
     :return: A string containing the summary.
     """
     initial_prompt_list = create_summarize_chain(initial_prompt_list)
     summary_docs = extract_summary_docs(langchain_document, num_clusters, api_key, find_clusters)
-    output = create_summary_from_docs(summary_docs, initial_prompt_list, final_prompt_list, api_key, use_gpt_4)
+    output = create_summary_from_docs(summary_docs, initial_prompt_list, final_prompt_list)
     return output
 
 
