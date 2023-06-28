@@ -1,15 +1,13 @@
-# **GPT 3.5/4 Powered Document Summarizer**
+# **GPT 3.5 Powered Document Summarizer**
 
-This is a tool that takes a text document (PDF or TXT) or YouTube transcript and generates a concise summary using GPT-4 or GPT-3.5-turbo. It can accurately summarize hundreds of pages of text. It's built with Python and Streamlit and leverages the langchain library for text processing.
-While the final output is generated with either GPT3.5 or GPT4 (the LLM's that power ChatGPT), only a small portion of the overall document is used in the prompts. Before any call is made to either LLM, the document is separated into
+This is a tool that takes a text document (PDF or TXT) or YouTube transcript and generates a concise summary using GPT-3.5-turbo. It can accurately summarize hundreds of pages of text. It's built with Python and Streamlit and leverages the langchain library for text processing.
+While the final output is generated with either GPT3.5, only a small portion of the overall document is used in the prompts. Before any call is made to either LLM, the document is separated into
 small sections that contain the majority of the meaning of the document. 
-
-Demo it here: https://gptdoc-summarizer.streamlit.app/
 
 ## Features
 
 - Supports PDF and TXT file formats
-- Utilizes GPT-4 or GPT-3.5-turbo for generating summaries
+- Utilizes GPT-3.5-turbo for generating summaries
 - Automatic clustering of the input document to identify key sections
 - Customizable number of clusters for the summarization process
 
@@ -17,9 +15,14 @@ Demo it here: https://gptdoc-summarizer.streamlit.app/
 
 1. Launch the Streamlit app by running `streamlit run main.py`
 2. Upload a document (TXT or PDF) to summarize.
-3. Enter your OpenAI API key if the free usage cap has been hit.
-4. Choose whether to use GPT-4 for the summarization (recommended, requires GPT-4 API access).
-5. Click the "Summarize" button and wait for the result.
+3. Create a `.env` file and entr the following variables
+   
+    OPENAI_API_KEY="<Azure Openai API Key>"
+    OPENAI_API_BASE="https://<Azure OpenAI Resource>.openai.azure.com/"
+    OPENAI_API_VERSION="2023-05-15"
+   
+6. Choose whether or not to try to find optimal clusters (which could save on token usage).
+7. Click the "Summarize" button and wait for the result.
 
 ## Modules
 
